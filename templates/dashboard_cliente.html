@@ -2,7 +2,7 @@
 {% block title %}Dashboard do Cliente{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 mt-4">
+<div class="container-fluid px-0 mt-0">
 
   <!-- TÍTULO -->
   <div class="d-flex justify-content-between align-items-center mb-4">
@@ -172,7 +172,7 @@
           <div class="row g-4">
 
             <!-- 3.1) AÇÕES (Botões Principais) -->
-            <div class="col-12 col-lg-6">
+            <div class="col-12 col-lg-6 px-0">
               <div class="card h-100 shadow">
                 <div class="card-header bg-primary text-white fw-bold">
                   <i class="bi bi-tools me-2"></i>Ações Principais
@@ -229,34 +229,47 @@
     </div>
     <div class="card-body">
       <!-- Check-in Global -->
-      <form action="{{ url_for('routes.toggle_checkin_global_cliente') }}" method="post" class="mb-3 d-flex justify-content-between align-items-center">
+      <div class="mb-3 d-flex justify-content-between align-items-center">
         <div class="fw-semibold">
           Permitir Check-in Global (Somente em minhas oficinas)
         </div>
-        <button type="submit" class="btn btn-{{ 'success' if config_cliente and config_cliente.permitir_checkin_global else 'danger' }}">
+        <button type="button" 
+                id="btnToggleCheckin"
+                class="btn btn-{{ 'success' if config_cliente and config_cliente.permitir_checkin_global else 'danger' }}"
+                data-toggle-url="{{ url_for('routes.toggle_checkin_global_cliente') }}"
+        >
           {{ 'Ativo' if config_cliente and config_cliente.permitir_checkin_global else 'Desativado' }}
         </button>
-      </form>
+      </div>
 
       <!-- Feedback -->
-      <form action="{{ url_for('routes.toggle_feedback_cliente') }}" method="post" class="mb-3 d-flex justify-content-between align-items-center">
+      <div class="mb-3 d-flex justify-content-between align-items-center">
         <div class="fw-semibold">
           Habilitar Envio de Feedback (Somente em minhas oficinas)
         </div>
-        <button type="submit" class="btn btn-{{ 'success' if config_cliente and config_cliente.habilitar_feedback else 'danger' }}">
+        <button type="button"
+                id="btnToggleFeedback"
+                class="btn btn-{{ 'success' if config_cliente and config_cliente.habilitar_feedback else 'danger' }}"
+                data-toggle-url="{{ url_for('routes.toggle_feedback_cliente') }}"
+        >
           {{ 'Ativo' if config_cliente and config_cliente.habilitar_feedback else 'Desativado' }}
         </button>
-      </form>
+      </div>
 
       <!-- Certificado -->
-      <form action="{{ url_for('routes.toggle_certificado_cliente') }}" method="post" class="mb-3 d-flex justify-content-between align-items-center">
+      <div class="mb-3 d-flex justify-content-between align-items-center">
         <div class="fw-semibold">
           Habilitar Baixar Certificado (Somente em minhas oficinas)
         </div>
-        <button type="submit" class="btn btn-{{ 'success' if config_cliente and config_cliente.habilitar_certificado_individual else 'danger' }}">
+        <button type="button" 
+                id="btnToggleCertificado"
+                class="btn btn-{{ 'success' if config_cliente and config_cliente.habilitar_certificado_individual else 'danger' }}"
+                data-toggle-url="{{ url_for('routes.toggle_certificado_cliente') }}"
+        >
           {{ 'Ativo' if config_cliente and config_cliente.habilitar_certificado_individual else 'Desativado' }}
         </button>
-      </form>
+      </div>
+
     </div>
   </div>
 </div>
@@ -322,7 +335,60 @@
 </div> <!-- /container-fluid -->
 
 <!-- ============= SCRIPTS E MODALS (iguais ao código original) ============= -->
-
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Pegar todos botões que têm data-toggle-url
+    const toggleButtons = [
+      document.getElementById('btnToggleCheckin'),
+      document.getElementById('btnToggleFeedback'),
+      document.getElementById('btnToggleCertificado')
+    ];
+  
+    toggleButtons.forEach(button => {
+      if (!button) return;
+      const toggleUrl = button.dataset.toggleUrl;
+  
+      button.addEventListener('click', function() {
+        // Fazer POST via fetch
+        fetch(toggleUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+            // Se você usar CSRF, inclua o token aqui também
+          },
+          body: JSON.stringify({}) // Caso precise enviar algo; se não, pode ser vazio
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            // data.value => true ou false
+            atualizarBotao(button, data.value);
+          } else {
+            alert("Falha ao atualizar: " + data.message);
+          }
+        })
+        .catch(err => {
+          alert("Erro na requisição: " + err);
+        });
+      });
+    });
+  
+    function atualizarBotao(btn, valorAtivo) {
+      // Muda cor da classe
+      if (valorAtivo) {
+        btn.classList.remove("btn-danger");
+        btn.classList.add("btn-success");
+        btn.textContent = "Ativo";
+      } else {
+        btn.classList.remove("btn-success");
+        btn.classList.add("btn-danger");
+        btn.textContent = "Desativado";
+      }
+    }
+  });
+  </script>
+  
 <script>
   function carregarRelatorioMensagem() {
     fetch("{{ url_for('routes.gerar_relatorio_mensagem') }}")
