@@ -1793,6 +1793,28 @@ class Review(db.Model):
 
 
 # -----------------------------------------------------------------------------
+# REVIEW EMAIL LOG (falhas no envio de e-mail de revisão)
+# -----------------------------------------------------------------------------
+class ReviewEmailLog(db.Model):
+    """Registra falhas ao notificar revisores por e-mail."""
+
+    __tablename__ = "review_email_log"
+
+    id = db.Column(db.Integer, primary_key=True)
+    review_id = db.Column(db.Integer, db.ForeignKey("review.id"), nullable=False)
+    recipient = db.Column(db.String(255), nullable=False)
+    error = db.Column(db.String(255), nullable=True)
+    error_type = db.Column(db.String(255), nullable=True)
+    error_message = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    review = db.relationship("Review", backref=db.backref("email_logs", lazy=True))
+
+    def __repr__(self):  # pragma: no cover - representation only
+        return f"<ReviewEmailLog review={self.review_id} recipient={self.recipient}>"
+
+
+# -----------------------------------------------------------------------------
 
 # ASSIGNMENT (vincula revisor ↔ submissão)
 # -----------------------------------------------------------------------------

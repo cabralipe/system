@@ -1,4 +1,4 @@
-from flask import Flask, url_for as flask_url_for
+from flask import Flask, g, has_request_context, request, url_for as flask_url_for
 from flask_cors import CORS
 from flask_socketio import join_room
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -9,12 +9,31 @@ from models import Inscricao
 import pytz
 import logging
 import os
+import uuid
 
 # Configuração centralizada de logging
-logging.basicConfig(
-    level=logging.DEBUG if Config.DEBUG else logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+
+
+class RequestFormatter(logging.Formatter):
+    """Inclui ``request_id`` no log, mesmo fora de contexto de requisição."""
+
+    def format(self, record: logging.LogRecord) -> str:  # pragma: no cover
+        if has_request_context():
+            record.request_id = getattr(g, "request_id", "-")
+        else:
+            record.request_id = "-"
+        return super().format(record)
+
+
+handler = logging.StreamHandler()
+handler.setFormatter(
+    RequestFormatter(
+        "%(asctime)s [%(levelname)s] [%(request_id)s] %(name)s: %(message)s"
+    )
 )
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG if Config.DEBUG else logging.INFO)
+root_logger.handlers = [handler]
 
 
 from services.mp_service import get_sdk
@@ -43,6 +62,11 @@ def create_app():
     mail.init_app(app)
     csrf.init_app(app)
     CORS(app)
+
+    @app.before_request
+    def set_request_id() -> None:
+        """Gera ou reutiliza um ID de requisição para o contexto atual."""
+        g.request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
 
     login_manager.login_view = "auth_routes.login"
     login_manager.session_protection = "strong"

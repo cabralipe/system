@@ -42,7 +42,9 @@ def notify_reviewer(review):
             ReviewEmailLog(
                 review_id=review.id,
                 recipient=review.reviewer.email,
-                error=str(exc),
+                error=f"{exc.__class__.__name__}: {exc}",
+                error_type=exc.__class__.__name__,
+                error_message=str(exc),
             )
         )
     except Exception as exc:  # pragma: no cover
@@ -54,6 +56,8 @@ def notify_reviewer(review):
             ReviewEmailLog(
                 review_id=review.id,
                 recipient=review.reviewer.email,
-                error=str(exc),
+                error=f"{exc.__class__.__name__}: {exc}",
+                error_type=exc.__class__.__name__,
+                error_message=str(exc),
             )
         )

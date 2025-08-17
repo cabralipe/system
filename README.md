@@ -35,6 +35,25 @@ chaves do Google são necessárias para a autenticação via Gmail. A variável
 reduzindo o volume de mensagens em produção. Ajuste para `DEBUG` durante o
 desenvolvimento para obter logs mais detalhados.
 
+## Logging
+
+A aplicação configura o logger para incluir `request_id` e timestamp em cada
+mensagem. O identificador é gerado para cada requisição ou reaproveitado do
+cabeçalho `X-Request-ID`, facilitando a correlação de eventos. Stack traces
+completos são emitidos ao usar `logger.exception`.
+
+Para verificar a configuração localmente, execute a aplicação e force uma
+falha deliberada. Por exemplo:
+
+```bash
+python -m flask --app app run &
+curl http://localhost:5000/rota-inexistente
+```
+
+Os logs exibidos no terminal mostrarão o `request_id` gerado e o traceback
+completo. Defina `LOG_LEVEL=DEBUG` para maior verbosidade durante o
+desenvolvimento.
+
 ## Banco de Dados
 
 Depois de clonar o repositório ou atualizar o código, instale as dependências
