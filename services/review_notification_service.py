@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 def notify_reviewer(review):
     """Send access details to the assigned reviewer via e-mail.
 
-    If sending fails, a ``ReviewEmailLog`` entry is created so failures can be
-    audited later.
+    If sending fails, a ``ReviewEmailLog`` entry is created and committed so the
+    failure can be audited even if the outer transaction rolls back.
     """
     if not review.reviewer or not review.reviewer.email:
         return
@@ -45,6 +45,11 @@ def notify_reviewer(review):
                 error=str(exc),
             )
         )
+        try:
+            db.session.commit()
+        except Exception:  # pragma: no cover - commit errors are rare
+            db.session.rollback()
+            logger.exception("Erro ao registrar falha de e-mail")
     except Exception as exc:  # pragma: no cover
         logger.exception(
             "Erro inesperado ao enviar e-mail de revisão para %s",
@@ -57,3 +62,8 @@ def notify_reviewer(review):
                 error=str(exc),
             )
         )
+        try:
+            db.session.commit()
+        except Exception:  # pragma: no cover - commit errors are rare
+            db.session.rollback()
+            logger.exception("Erro ao registrar falha de e-mail")
