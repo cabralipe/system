@@ -517,7 +517,7 @@ class Feedback(db.Model):
     oficina_id = db.Column(db.Integer, db.ForeignKey("oficina.id"), nullable=False)
     rating = db.Column(db.Integer, nullable=False)  # Nota de 1 a 5
     comentario = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     usuario = db.relationship("Usuario", backref="feedbacks")
     ministrante = db.relationship("Ministrante", backref="feedbacks")
@@ -1781,6 +1781,7 @@ class Review(db.Model):
     # relationships
     submission = db.relationship("Submission", backref=db.backref("reviews", lazy=True))
     reviewer = db.relationship("Usuario", backref=db.backref("reviews", lazy=True))
+    email_logs = db.relationship("ReviewEmailLog", backref="review")
 
     def __repr__(self):
         return f"<Review {self.id} submission={self.submission_id}>"
@@ -1790,6 +1791,24 @@ class Review(db.Model):
         if self.started_at and self.finished_at:
             return int((self.finished_at - self.started_at).total_seconds())
         return None
+
+
+# -----------------------------------------------------------------------------
+# REVIEW EMAIL LOG
+# -----------------------------------------------------------------------------
+class ReviewEmailLog(db.Model):
+    """Registra tentativas de envio de e-mail para um parecer."""
+
+    __tablename__ = "review_email_log"
+
+    id = db.Column(db.Integer, primary_key=True)
+    review_id = db.Column(db.Integer, db.ForeignKey("review.id"), nullable=False)
+    recipient = db.Column(db.String(255), nullable=False)
+    error = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<ReviewEmailLog id={self.id} review_id={self.review_id}>"
 
 
 # -----------------------------------------------------------------------------
@@ -1912,3 +1931,7 @@ class ProcessoBaremaRequisito(db.Model):
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<ProcessoBaremaRequisito id={self.id} barema={self.barema_id}>"
+
+
+# Expose models for convenient imports
+__all__ = [name for name, obj in globals().items() if isinstance(obj, type)]
